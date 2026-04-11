@@ -52,6 +52,7 @@ const elBtnLang         = document.getElementById('btn-lang');
 const elBtnTheme        = document.getElementById('btn-theme');
 const elPrintLength     = document.getElementById('input-print-length');
 const elPrintLengthVal  = document.getElementById('print-length-val');
+const elPrintabilityNote = document.getElementById('printability-note');
 const elThreePlaceholder = document.getElementById('three-placeholder');
 const elThreeCanvas     = document.getElementById('three-canvas');
 const elTypeGroup       = document.getElementById('plate-type-group');
@@ -82,6 +83,19 @@ function populateHiragana() {
  */
 function validateSerial(s) {
   return /^[0-9\-\. ]{0,6}$/.test(s);
+}
+
+function parseFiniteNumber(value) {
+  const num = Number.parseFloat(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function parseHexColor(value) {
+  return /^#[0-9a-fA-F]{6}$/.test(value || '') ? value.toUpperCase() : null;
 }
 
 // ─── I18N ─────────────────────────────────────────────────────────
@@ -155,7 +169,25 @@ function applyLang(lang) {
   });
   document.documentElement.lang = lang === 'ja' ? 'ja' : 'en';
   elBtnLang.textContent = lang === 'ja' ? 'EN' : 'JP';
+  updatePrintabilityNote();
   try { localStorage.setItem('putali-lang', lang); } catch (_) {}
+}
+
+function updatePrintabilityNote() {
+  const length = parseFiniteNumber(elPrintLength.value) ?? 120;
+  if (length >= 100) {
+    elPrintabilityNote.textContent = '';
+    elPrintabilityNote.classList.add('hidden');
+    elPrintabilityNote.classList.remove('warning');
+    return;
+  }
+
+  const msg = _currentLang === 'ja'
+    ? '100mm未満では、漢字とひらがなの細い線が0.4mmノズルでつぶれたり欠けたりしやすくなります。100mm以上、または0.2mmノズルを推奨します。'
+    : 'Below 100mm overall width, kanji and hiragana strokes are often too fine for a 0.4mm nozzle. Use 100mm+ or a 0.2mm nozzle for cleaner slicing.';
+  elPrintabilityNote.textContent = msg;
+  elPrintabilityNote.classList.remove('hidden');
+  elPrintabilityNote.classList.add('warning');
 }
 
 // ─── URL SHARING ─────────────────────────────────────────────────
@@ -168,6 +200,9 @@ function updateURL() {
   p.set('s',  config.serial);
   p.set('th', config.plateThickness);
   p.set('em', config.textDepth);
+  p.set('pl', elPrintLength.value);
+  p.set('lang', _currentLang);
+  p.set('theme', document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
   if (config.customBg)     p.set('cbg',  config.customBg);
   if (config.customText)   p.set('ctxt', config.customText);
   if (config.customBorder) p.set('cbrd', config.customBorder);
@@ -190,16 +225,54 @@ function loadFromURL() {
   if (p.has('c'))  config.classification  = p.get('c');
   if (p.has('h'))  config.hiragana        = p.get('h');
   if (p.has('s'))  config.serial          = p.get('s');
-  if (p.has('th')) config.plateThickness  = parseFloat(p.get('th'));
-  if (p.has('em')) config.textDepth       = parseFloat(p.get('em'));
-  if (p.has('k'))   config.keychainHole    = p.get('k') === '1';
-  if (p.has('hr'))  config.holeRadius      = parseFloat(p.get('hr'));
-  if (p.has('hp'))  config.holePosition    = p.get('hp');
-  if (p.has('hx'))  config.holeCustomX     = parseFloat(p.get('hx'));
-  if (p.has('hy'))  config.holeCustomY     = parseFloat(p.get('hy'));
-  if (p.has('cbg'))  config.customBg     = p.get('cbg');
-  if (p.has('ctxt')) config.customText   = p.get('ctxt');
-  if (p.has('cbrd')) config.customBorder = p.get('cbrd');
+  if (p.has('th')) {
+    const value = parseFiniteNumber(p.get('th'));
+    if (value !== null) config.plateThickness = clampNumber(value, 1, 20);
+  }
+  if (p.has('em')) {
+    const value = parseFiniteNumber(p.get('em'));
+    if (value !== null) config.textDepth = clampNumber(value, 0.3, 20);
+  }
+  if (p.has('k')) config.keychainHole = p.get('k') === '1';
+  if (p.has('hr')) {
+    const value = parseFiniteNumber(p.get('hr'));
+    if (value !== null) config.holeRadius = clampNumber(value, 2, 15);
+  }
+  if (p.has('hp')) config.holePosition = p.get('hp');
+  if (p.has('hx')) {
+    const value = parseFiniteNumber(p.get('hx'));
+    if (value !== null) config.holeCustomX = clampNumber(value, 5, 325);
+  }
+  if (p.has('hy')) {
+    const value = parseFiniteNumber(p.get('hy'));
+    if (value !== null) config.holeCustomY = clampNumber(value, 5, 160);
+  }
+  if (p.has('pl')) {
+    const value = parseFiniteNumber(p.get('pl'));
+    if (value !== null) elPrintLength.value = String(clampNumber(value, 30, 330));
+  }
+  if (p.has('cbg')) {
+    const value = parseHexColor(p.get('cbg'));
+    if (value) config.customBg = value;
+  }
+  if (p.has('ctxt')) {
+    const value = parseHexColor(p.get('ctxt'));
+    if (value) config.customText = value;
+  }
+  if (p.has('cbrd')) {
+    const value = parseHexColor(p.get('cbrd'));
+    if (value) config.customBorder = value;
+  }
+  if (p.has('lang')) {
+    const value = p.get('lang');
+    if (value === 'en' || value === 'ja') _currentLang = value;
+  }
+  if (p.has('theme')) {
+    const value = p.get('theme');
+    if (value === 'light' || value === 'dark') {
+      document.documentElement.dataset.theme = value === 'dark' ? 'dark' : '';
+    }
+  }
 }
 
 // ─── SVG PREVIEW ─────────────────────────────────────────────────
@@ -384,6 +457,8 @@ elBtnGenerate.addEventListener('click', async () => {
 // Print length slider
 elPrintLength.addEventListener('input', () => {
   elPrintLengthVal.textContent = elPrintLength.value;
+  updatePrintabilityNote();
+  updateURL();
 });
 
 // Download 3MF (colored)
@@ -405,7 +480,10 @@ elBtnStl.addEventListener('click', async () => {
 elBtnStlPlain.addEventListener('click', async () => {
   try {
     elBtnStlPlain.disabled = true;
-    await downloadSTL(`jp-plate-${config.plateType}-${config.prefecture}${config.classification}.stl`);
+    await downloadSTL(
+      `jp-plate-${config.plateType}-${config.prefecture}${config.classification}.stl`,
+      parseFloat(elPrintLength.value),
+    );
   } catch (err) {
     alert(err.message);
   } finally {
@@ -459,6 +537,7 @@ function applyTheme(dark) {
   if (sunIcon)  sunIcon.style.display  = dark ? 'none'  : '';
   if (moonIcon) moonIcon.style.display = dark ? ''      : 'none';
   try { localStorage.setItem('putali-theme', dark ? 'dark' : 'light'); } catch (_) {}
+  updateURL();
 }
 
 elBtnTheme.addEventListener('click', () => {
@@ -468,6 +547,7 @@ elBtnTheme.addEventListener('click', () => {
 // Language toggle
 elBtnLang.addEventListener('click', () => {
   applyLang(_currentLang === 'ja' ? 'en' : 'ja');
+  updateURL();
 });
 
 // Toast helper
@@ -508,6 +588,7 @@ function init() {
   elHoleYVal.textContent = config.holeCustomY || 14;
   elHoleRadiusSection.style.display = config.keychainHole ? 'block' : 'none';
   elPrintLengthVal.textContent = elPrintLength.value;
+  updatePrintabilityNote();
 
   // Activate correct type button + populate hiragana
   document.querySelectorAll('.type-btn').forEach(b => {
@@ -531,14 +612,22 @@ function init() {
     // User will be prompted on "Generate 3D" click if still failing
   });
 
-  // Apply saved language (or default English)
-  let savedLang = 'en';
-  try { savedLang = localStorage.getItem('putali-lang') || 'en'; } catch (_) {}
+  // Apply saved language unless URL already provided one.
+  let savedLang = _currentLang;
+  try {
+    if (!new URLSearchParams(location.search).has('lang')) {
+      savedLang = localStorage.getItem('putali-lang') || _currentLang;
+    }
+  } catch (_) {}
   applyLang(savedLang);
 
-  // Apply saved theme (default: light)
-  let savedTheme = 'light';
-  try { savedTheme = localStorage.getItem('putali-theme') || 'light'; } catch (_) {}
+  // Apply saved theme unless URL already provided one.
+  let savedTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  try {
+    if (!new URLSearchParams(location.search).has('theme')) {
+      savedTheme = localStorage.getItem('putali-theme') || savedTheme;
+    }
+  } catch (_) {}
   applyTheme(savedTheme === 'dark');
 
   // Write initial URL params

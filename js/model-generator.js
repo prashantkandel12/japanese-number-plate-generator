@@ -14,7 +14,7 @@ import * as THREE from 'three';
 import { OrbitControls }         from 'three/addons/controls/OrbitControls.js';
 import { SVGLoader }             from 'three/addons/loaders/SVGLoader.js';
 import { STLExporter }           from 'three/addons/exporters/STLExporter.js';
-import { mergeGeometries }       from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 import {
   PLATE_W, PLATE_H, BORDER, CORNER_R,
@@ -133,6 +133,65 @@ function addCircleHole(shape, cx, cy, r) {
 }
 
 /**
+ * Prepare a SINGLE body's geometry for manifold output.
+ * Must be called on each individual ExtrudeGeometry BEFORE merging with
+ * other bodies — merging vertices across bodies creates non-manifold edges
+ * where two solids share an edge (4+ faces per edge instead of 2).
+ */
+function cleanSingleBody(geo) {
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  const merged = mergeVertices(geo, 0.05);
+  // Remove degenerate triangles (zero-area) that result from vertex merging
+  if (merged.index) {
+    const oldIdx = merged.index.array;
+    const newIdx = [];
+    for (let i = 0; i < oldIdx.length; i += 3) {
+      const a = oldIdx[i], b = oldIdx[i + 1], c = oldIdx[i + 2];
+      if (a !== b && b !== c && a !== c) {
+        newIdx.push(a, b, c);
+      }
+    }
+    merged.setIndex(newIdx);
+  }
+  return merged;
+}
+
+/** Create an ExtrudeGeometry and immediately clean it for manifold output. */
+function makeCleanExtrusion(shape, opts) {
+  return cleanSingleBody(new THREE.ExtrudeGeometry(shape, opts));
+}
+
+/**
+ * Flip triangle winding order (swap v1 ↔ v2 per face).
+ * Required after a single-axis negative scale (e.g. scale(1,-1,1))
+ * to keep face normals pointing outward for correct 3D-printing.
+ */
+function flipWinding(geo) {
+  const idx = geo.index;
+  if (idx) {
+    const arr = idx.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      const tmp = arr[i + 1];
+      arr[i + 1] = arr[i + 2];
+      arr[i + 2] = tmp;
+    }
+    idx.needsUpdate = true;
+  } else {
+    const pos = geo.attributes.position;
+    const pa  = pos.array;
+    for (let i = 0; i < pa.length; i += 9) {
+      for (let j = 0; j < 3; j++) {
+        const tmp = pa[i + 3 + j];
+        pa[i + 3 + j] = pa[i + 6 + j];
+        pa[i + 6 + j] = tmp;
+      }
+    }
+    pos.needsUpdate = true;
+  }
+}
+
+/**
  * Convert an opentype.Path to one or more THREE.Shape objects.
  * Uses SVGLoader.createShapes() internally after converting to SVG path data.
  */
@@ -193,7 +252,7 @@ export function buildPlate3D(config) {
     const { cx: holeCX, cy: holeCY } = getHoleCenter(config);
     addCircleHole(plateShape, holeCX, PLATE_H - holeCY, holeRadius ?? HOLE_R);
   }
-  baseGeos.push(new THREE.ExtrudeGeometry(plateShape, {
+  baseGeos.push(makeCleanExtrusion(plateShape, {
     depth: plateThickness,
     bevelEnabled: false,
   }));
@@ -212,15 +271,14 @@ export function buildPlate3D(config) {
       PLATE_W - BORDER * 3, PLATE_H - BORDER * 3,
       Math.max(CORNER_R - 2, 1),
     ).getPoints(64);
-    borderOuter.holes.push(new THREE.Path(borderInnerPts));
+    borderOuter.holes.push(new THREE.Path(borderInnerPts.reverse()));
     // Extrude from z=0; textGeo translation will place it starting from the plate
     // front face. Override depth so ridge is just textDepth above the plate surface.
     const borderDepth = Math.min(textDepth * 0.6, 0.8);
-    const borderGeo = new THREE.ExtrudeGeometry(borderOuter, {
+    borderGeos.push(makeCleanExtrusion(borderOuter, {
       depth: borderDepth,
       bevelEnabled: false,
-    });
-    borderGeos.push(borderGeo);
+    }));
   }
 
   // ── 3. TEXT EXTRUSIONS ─────────────────────────────────────────
@@ -245,24 +303,22 @@ export function buildPlate3D(config) {
         cursorX += fontSize * 0.3;
         continue;
       }
-      // Special case: '·' — render as a manual circle at correct vertical centre
-      // opentype.js glyph rendering varies by CDN font; a circle is always correct.
+      // Special case: '·' — render as a filled circle at correct vertical centre.
+      // Using explicit polygon points (not absarc) avoids Three.js shape winding issues.
       if (char === '·') {
-        const f = _font;
-        const dotGlyph = f.charToGlyph('·');
-        const advance  = dotGlyph
-          ? Math.min((dotGlyph.advanceWidth / f.unitsPerEm) * fontSize, fontSize * 0.6)
-          : fontSize * 0.55;
-        const dotR  = fontSize * 0.09;
+        const advance = fontSize * 0.55;  // same advance as SVG calculation
+        const dotR  = fontSize * 0.08;    // doubled from 0.04 for better visibility
         const dotCx = cursorX + advance * 0.5;
-        // Dot vertically centred at mid-cap of digits:
-        // Three.js Y = (PLATE_H - baselineY) + fontSize * 0.36
-        // (opentype paths have negative Y for ascenders, so we ADD the offset)
         const dotCy = (PLATE_H - baselineY) + fontSize * 0.36;
-        const circle = new THREE.Shape();
-        circle.absarc(dotCx, dotCy, dotR, 0, Math.PI * 2, false);
-        textGeos.push(new THREE.ExtrudeGeometry(circle, { depth: textExtrudeDepth, bevelEnabled: false }));
-        cursorX += advance;
+        const segs  = 32;
+        const pts   = [];
+        for (let i = 0; i < segs; i++) {
+          const a = (i / segs) * Math.PI * 2;
+          pts.push(new THREE.Vector2(dotCx + Math.cos(a) * dotR, dotCy + Math.sin(a) * dotR));
+        }
+        const dotShape = new THREE.Shape(pts);
+        textGeos.push(makeCleanExtrusion(dotShape, { depth: textExtrudeDepth, bevelEnabled: false, curveSegments: 1 }));
+        cursorX += advance + letterSpacing;
         continue;
       }
       const f = isNumChar(char) ? _numFont : _font;
@@ -272,23 +328,16 @@ export function buildPlate3D(config) {
       const advance = glyph ? (glyph.advanceWidth / f.unitsPerEm) * fontSize : fontSize;
 
       for (const shape of shapes) {
-        const flipY = (p) => new THREE.Vector2(
-          p.x + cursorX,
-          (PLATE_H - baselineY) - p.y,
-        );
-        // Reverse restores correct winding after Y-flip
-        const outer = shape.getPoints(48).map(flipY).reverse();
-        const translated = new THREE.Shape(outer);
-
-        for (const hole of shape.holes) {
-          const hFlipped = hole.getPoints(32).map(flipY).reverse();
-          translated.holes.push(new THREE.Path(hFlipped));
-        }
-
-        textGeos.push(new THREE.ExtrudeGeometry(translated, {
+        let glyphGeo = new THREE.ExtrudeGeometry(shape, {
           depth: textExtrudeDepth,
           bevelEnabled: false,
-        }));
+          curveSegments: 24,
+        });
+        glyphGeo.scale(1, -1, 1);
+        flipWinding(glyphGeo);
+        glyphGeo.translate(cursorX, PLATE_H - baselineY, 0);
+        glyphGeo = cleanSingleBody(glyphGeo);
+        textGeos.push(glyphGeo);
       }
       cursorX += advance + letterSpacing;
     }
@@ -327,13 +376,16 @@ export function buildPlate3D(config) {
       const glyph   = f.charToGlyph(char);
       const advance = (glyph ? (glyph.advanceWidth / f.unitsPerEm) * FS_CLASSIFICATION : FS_CLASSIFICATION) + TOP_GAP;
       for (const shape of shapes) {
-        const flipY = (p) => new THREE.Vector2(p.x + curX, (PLATE_H - TOP_ROW_BASELINE) - p.y);
-        const outer = shape.getPoints(48).map(flipY).reverse();
-        const translated = new THREE.Shape(outer);
-        for (const hole of shape.holes) {
-          translated.holes.push(new THREE.Path(hole.getPoints(32).map(flipY).reverse()));
-        }
-        textGeos.push(new THREE.ExtrudeGeometry(translated, { depth: textExtrudeDepth, bevelEnabled: false }));
+        let glyphGeo = new THREE.ExtrudeGeometry(shape, {
+          depth: textExtrudeDepth,
+          bevelEnabled: false,
+          curveSegments: 24,
+        });
+        glyphGeo.scale(1, -1, 1);
+        flipWinding(glyphGeo);
+        glyphGeo.translate(curX, PLATE_H - TOP_ROW_BASELINE, 0);
+        glyphGeo = cleanSingleBody(glyphGeo);
+        textGeos.push(glyphGeo);
       }
       curX += advance;
     }
@@ -527,7 +579,11 @@ export function updateViewer(config) {
   if (textGeo) allGeos.push(textGeo.clone());
   if (borderGeo) allGeos.push(borderGeo.clone());
   const stlGeos = allGeos.length > 1 ? mergeGeometries(allGeos) : allGeos[0];
-  _stlData = exporter2.parse(new THREE.Mesh(stlGeos), { binary: true });
+  const rawStl = exporter2.parse(new THREE.Mesh(stlGeos), { binary: true });
+  // STLExporter returns DataView in Three.js r165+; normalise to Uint8Array
+  _stlData = rawStl instanceof DataView
+    ? new Uint8Array(rawStl.buffer, rawStl.byteOffset, rawStl.byteLength)
+    : rawStl;
   stlGeos.dispose();
 
   return group;
@@ -536,64 +592,44 @@ export function updateViewer(config) {
 // ─── STL EXPORT ──────────────────────────────────────────────────
 
 /**
- * Download a ZIP containing two STL files — one per color body.
+ * Download a ZIP containing STL files — one per printable body.
  * When imported into Bambu Studio / PrusaSlicer as separate objects,
  * each can be assigned a different filament color.
  */
-export async function downloadSTL(filename = 'jp-plate.stl') {
+export async function downloadSTL(filename = 'jp-plate.stl', printLengthMm = 120) {
   if (!_lastBaseGeo) throw new Error('No 3D model generated yet.');
   if (!window.JSZip)  throw new Error('JSZip not loaded.');
 
-  const base = filename.replace(/\.stl$/i, '');
-  const zip  = new window.JSZip();
+  const base     = filename.replace(/\.stl$/i, '');
+  const zip      = new window.JSZip();
   const exporter = new STLExporter();
+  const scale    = printLengthMm / PLATE_W;
 
-  // Determine if border shares a color with plate or text, and merge accordingly
-  const theme2  = PLATE_TYPES[(_lastConfig?.plateType) || 'private'] || PLATE_TYPES.private;
-  const cfg2    = _lastConfig || {};
-  const n = (c) => (c || '').replace(/^#/, '').toUpperCase();
-  const bgN     = n(cfg2.customBg     || theme2.bg);
-  const textN   = n(cfg2.customText   || theme2.text);
-  const borderN = n(cfg2.customBorder || theme2.border);
-
-  // Geos for each STL body
-  const plateBodyGeos = [_lastBaseGeo.clone()];
-  const textBodyGeos  = _lastTextGeo ? [_lastTextGeo.clone()] : [];
-  if (_lastBorderGeo) {
-    if (borderN === bgN) {
-      plateBodyGeos.push(_lastBorderGeo.clone());
-    } else if (borderN === textN) {
-      textBodyGeos.push(_lastBorderGeo.clone());
-    } else {
-      // Unique border color — separate file
-      const borderStlGeo = _lastBorderGeo.clone();
-      const borderStl = exporter.parse(new THREE.Mesh(borderStlGeo), { binary: false });
-      borderStlGeo.dispose();
-      zip.file(`${base}-border.stl`, borderStl);
-    }
+  /** Parse one geo to binary STL and add to zip. */
+  function addSTL(name, geo) {
+    // Scale XY only — keep Z (thickness/emboss) at exact user-specified values
+    geo.scale(scale, scale, 1);
+    const stl = exporter.parse(new THREE.Mesh(geo), { binary: true });
+    geo.dispose();
+    // STLExporter returns DataView in Three.js r165+; JSZip needs ArrayBuffer/Uint8Array
+    const buf = stl instanceof DataView
+      ? new Uint8Array(stl.buffer, stl.byteOffset, stl.byteLength)
+      : stl;
+    zip.file(name, buf);
   }
 
-  const plateGeo = plateBodyGeos.length > 1 ? mergeGeometries(plateBodyGeos) : plateBodyGeos[0];
-  const baseStl  = exporter.parse(new THREE.Mesh(plateGeo), { binary: false });
-  if (plateBodyGeos.length > 1) plateGeo.dispose();
-  else plateBodyGeos.forEach(g => g.dispose());
-
-  zip.file(`${base}-plate.stl`, baseStl);
-
-  if (textBodyGeos.length > 0) {
-    const textGeo2 = textBodyGeos.length > 1 ? mergeGeometries(textBodyGeos) : textBodyGeos[0];
-    const textStl  = exporter.parse(new THREE.Mesh(textGeo2), { binary: false });
-    if (textBodyGeos.length > 1) textGeo2.dispose();
-    else textBodyGeos.forEach(g => g.dispose());
-    zip.file(`${base}-text.stl`, textStl);
-  }
+  addSTL(`${base}-plate.stl`,  _lastBaseGeo.clone());
+  if (_lastTextGeo)   addSTL(`${base}-text.stl`,   _lastTextGeo.clone());
+  if (_lastBorderGeo) addSTL(`${base}-border.stl`, _lastBorderGeo.clone());
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
   a.download = `${base}.zip`;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 // ─── 3MF EXPORT (colored, scaled) ────────────────────────────────
@@ -604,9 +640,9 @@ export async function downloadSTL(filename = 'jp-plate.stl') {
  *   3D/3dmodel.model     — two mesh objects, one per color
  *   Metadata/model_settings.config — Bambu extruder assignment (obj 2 → E1, obj 3 → E2)
  *
- * printLengthMm: desired physical width (default 70 mm).
+ * printLengthMm: desired physical width (default 120 mm).
  */
-export async function download3MF(filename = 'jp-plate.3mf', printLengthMm = 70) {
+export async function download3MF(filename = 'jp-plate.3mf', printLengthMm = 120) {
   if (!_lastBaseGeo) throw new Error('No 3D model generated yet.');
   if (!window.JSZip)  throw new Error('JSZip not loaded.');
 
@@ -614,20 +650,28 @@ export async function download3MF(filename = 'jp-plate.3mf', printLengthMm = 70)
   const _cfg  = _lastConfig || {};
   const scale = printLengthMm / PLATE_W;
 
-  /** Convert a BufferGeometry to 3MF <mesh> XML, applying scale. */
+  /** Convert a BufferGeometry to 3MF <mesh> XML, applying XY scale.
+   *  Geometry is already manifold (cleaned per-body in buildPlate3D).
+   *  Only apply scale and output indexed triangles directly. */
   function geoToMeshXML(geo) {
-    const g   = geo.index ? geo.toNonIndexed() : geo;
-    const pos = g.attributes.position;
-    const n   = pos.count;
+    const pos = geo.attributes.position;
+    const nVerts = pos.count;
     const verts = [];
-    for (let i = 0; i < n; i++) {
-      verts.push(`<vertex x="${(pos.getX(i) * scale).toFixed(4)}" y="${(pos.getY(i) * scale).toFixed(4)}" z="${(pos.getZ(i) * scale).toFixed(4)}"/>`);
+    for (let i = 0; i < nVerts; i++) {
+      // Scale XY only — keep Z (thickness/emboss) at exact user-specified values
+      verts.push(`<vertex x="${(pos.getX(i) * scale).toFixed(4)}" y="${(pos.getY(i) * scale).toFixed(4)}" z="${(pos.getZ(i)).toFixed(4)}"/>`);
     }
     const tris = [];
-    for (let i = 0; i < n; i += 3) {
-      tris.push(`<triangle v1="${i}" v2="${i + 1}" v3="${i + 2}"/>`);
+    if (geo.index) {
+      const idx = geo.index.array;
+      for (let i = 0; i < idx.length; i += 3) {
+        tris.push(`<triangle v1="${idx[i]}" v2="${idx[i + 1]}" v3="${idx[i + 2]}"/>`);
+      }
+    } else {
+      for (let i = 0; i < nVerts; i += 3) {
+        tris.push(`<triangle v1="${i}" v2="${i + 1}" v3="${i + 2}"/>`);
+      }
     }
-    if (g !== geo) g.dispose();
     return `<mesh><vertices>${verts.join('')}</vertices><triangles>${tris.join('')}</triangles></mesh>`;
   }
 
@@ -730,7 +774,9 @@ export async function download3MF(filename = 'jp-plate.3mf', printLengthMm = 70)
   const a    = document.createElement('a');
   a.href     = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 

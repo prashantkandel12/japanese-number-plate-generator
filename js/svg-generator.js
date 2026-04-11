@@ -231,7 +231,7 @@ function buildSerialSVG(s, startX, baselineY, fg, fontSize) {
   }
   const dotCX = +(dotX + adv('·') / 2).toFixed(2);
   const dotCY = +(baselineY - fontSize * 0.36).toFixed(2);
-  const dotR  = +(fontSize * 0.09).toFixed(2);
+  const dotR  = +(fontSize * 0.08).toFixed(2);
   const circle = `<circle cx="${dotCX}" cy="${dotCY}" r="${dotR}" fill="${fg}" />`;
 
   // Before-dot text: starts at lx, left-aligned

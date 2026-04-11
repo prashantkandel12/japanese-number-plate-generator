@@ -85,6 +85,6 @@ export const DEFAULT_CONFIG = {
   holePosition:    'top-left', // 'top-left'|'top-center'|'top-right'|'bottom-left'|'bottom-center'|'bottom-right'|'custom'
   holeCustomX:     14,    // mm from left edge — used when holePosition === 'custom'
   holeCustomY:     14,    // mm from top edge  — used when holePosition === 'custom'
-  plateThickness:  3.0,   // mm  (1–5 mm)
-  textDepth:       5.0,   // mm — how far text protrudes above plate face (0.3–10 mm)
+  plateThickness:  3.0,   // mm  (1–20 mm)
+  textDepth:       5.0,   // mm — how far text protrudes above plate face (0.3–20 mm)
 };
