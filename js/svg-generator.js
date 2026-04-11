@@ -136,7 +136,7 @@ export function buildPreviewSVG(config) {
 
   // ── Layout constants (no visible reference lines) ──
   const dividerY = 82;
-  const vsepX    = 82;
+  const vsepX    = 62;
 
   // ── TOP ROW ────────────────────────────────────────────────────
   // Combined as single centered text with 0.2em letter-spacing
@@ -275,7 +275,7 @@ export const LAYOUT = {
   FS_CLASSIFICATION,
   FS_HIRAGANA,
   FS_SERIAL,
-  VSEP_X: 82,
+  VSEP_X: 62,
   DIVIDER_Y: 82,
   // Shared baselines — use these in model-generator for matching alignment
   TOP_ROW_BASELINE: TOP_ROW_MID_Y + FS_CLASSIFICATION * 0.35,
