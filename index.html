@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Putali – Japanese Number Plate 3D Generator | 日本のナンバープレート3Dプリント</title>
+  <meta name="description" content="Generate customizable Japanese license plate 3D models for printing. Choose plate type, region, hiragana, serial number. Download colored 3MF or STL. Free online tool by Putali." />
+  <meta name="keywords" content="Japanese number plate, ナンバープレート, 3D print, STL, 3MF, Bambu Studio, keychain, license plate generator, Putali" />
+  <meta name="author" content="Putali" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://putali.aishwarya.co.jp/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="Putali – Japanese Number Plate 3D Generator" />
+  <meta property="og:description" content="Create and 3D print your own Japanese license plate keychain. Full color 3MF export for Bambu Studio." />
+  <meta property="og:image"       content="https://putali.aishwarya.co.jp/assets/og-jp-plate.png" />
+  <meta property="og:url"         content="https://putali.aishwarya.co.jp/" />
+  <meta property="og:site_name"   content="Putali" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="Putali – Japanese Number Plate 3D Generator" />
+  <meta name="twitter:description" content="Create and 3D print your own Japanese license plate keychain. Full color 3MF export for Bambu Studio." />
+  <meta name="twitter:image"       content="https://putali.aishwarya.co.jp/assets/og-jp-plate.png" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Putali Japanese Number Plate Generator",
+    "description": "Generate customizable Japanese license plate 3D models for Bambu Studio 3D printing with color support.",
+    "url": "https://putali.aishwarya.co.jp/",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "creator": { "@type": "Organization", "name": "Putali", "url": "https://putali.aishwarya.co.jp/" }
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&amp;family=M+PLUS+1p:wght@800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Three.js importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!-- opentype.js (UMD, loaded before modules) -->
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <!-- JSZip for 3MF export -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+
+  <!-- ─── HEADER ───────────────────────────────────────────── -->
+  <header>
+    <a href="https://putali.aishwarya.co.jp/" class="header-brand" aria-label="Putali home">
+      <img src="assets/putali-logo.png" alt="Putali mushroom logo" class="logo-icon" width="32" height="36" />
+    </a>
+    <div class="header-title">
+      <h1 data-i18n="appTitle">日本のナンバープレート Generator</h1>
+      <span class="header-sub" data-i18n="appSub">3D Print &amp; Download — by Putali</span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-share" class="btn-icon" title="Copy shareable URL" aria-label="Share">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+      <button id="btn-theme" class="btn-icon" title="Toggle dark mode" aria-label="Toggle theme">
+        <svg id="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button id="btn-lang" class="btn-lang" aria-label="Toggle language">JP</button>
+    </div>
+  </header>
+
+  <!-- ─── MAIN LAYOUT ──────────────────────────────────────── -->
+  <main>
+
+    <!-- ── LEFT: INPUT PANEL ─────────────────────────────── -->
+    <aside id="input-panel">
+
+      <!-- Plate Type -->
+      <section class="form-section">
+        <h2 data-i18n="plateType">Plate Type</h2>
+        <div class="button-group" id="plate-type-group">
+          <button class="type-btn active" data-type="private">私 Private</button>
+          <button class="type-btn" data-type="commercial">営 Commercial</button>
+          <button class="type-btn" data-type="kprivate">軽 Kei Private</button>
+          <button class="type-btn" data-type="kcommercial">軽 Kei Comm.</button>
+        </div>
+      </section>
+
+      <!-- Region / Prefecture -->
+      <section class="form-section">
+        <h2 data-i18n="prefecture">Region / Prefecture</h2>
+        <label class="field-label" data-i18n="prefLabel">Prefecture Kanji <span class="hint" data-i18n="prefHint">(e.g. 野田, 品川)</span></label>
+        <input type="text" id="input-prefecture" maxlength="6" placeholder="品川" value="品川" autocomplete="off" />
+      </section>
+
+      <!-- Vehicle Classification -->
+      <section class="form-section">
+        <h2 data-i18n="classification">Classification Number</h2>
+        <label class="field-label" data-i18n="classLabel">1–3 digits <span class="hint" data-i18n="classHint">(e.g. 530)</span></label>
+        <input type="text" id="input-classification" maxlength="3" placeholder="530" value="530" autocomplete="off" />
+      </section>
+
+      <!-- Hiragana -->
+      <section class="form-section">
+        <h2 data-i18n="hiragana">Hiragana Character</h2>
+        <select id="input-hiragana"></select>
+      </section>
+
+      <!-- Serial Number -->
+      <section class="form-section">
+        <h2 data-i18n="serial">Serial Number</h2>
+        <label class="field-label"><span data-i18n="serialLabel">Format: <code>XX-XX</code> or <code>·9 77</code></span></label>
+        <input type="text" id="input-serial" maxlength="6" placeholder="8888" value="8888" autocomplete="off" />
+        <p id="serial-error" class="field-error hidden">Invalid serial format</p>
+      </section>
+
+      <!-- 3D Options -->
+      <section class="form-section">
+        <h2 data-i18n="options3d">3D Options</h2>
+
+        <label class="field-label"><span data-i18n="thickness">Plate Thickness</span>: <strong id="thickness-val">3.0</strong> mm</label>
+        <input type="range" id="input-thickness" min="1" max="5" step="0.5" value="3" />
+
+        <label class="field-label" style="margin-top:12px"><span data-i18n="emboss">Text Emboss Depth</span>: <strong id="emboss-val">5.0</strong> mm</label>
+        <input type="range" id="input-emboss" min="0.3" max="10" step="0.1" value="5" />
+
+        <label class="check-label">
+          <input type="checkbox" id="input-keychain" />
+          <span>Keychain Hole</span>
+        </label>
+        <div id="hole-radius-section" style="display:none; margin-top:10px">
+          <label class="field-label">Hole Radius: <strong id="hole-radius-val">5.5</strong> mm</label>
+          <input type="range" id="input-hole-radius" min="2" max="15" step="0.5" value="5.5" />
+
+          <label class="field-label" style="margin-top:10px">Position:</label>
+          <select id="input-hole-pos">
+            <option value="top-left" selected>&#8598; Top Left</option>
+            <option value="top-center">&#8593; Top Center</option>
+            <option value="top-right">&#8599; Top Right</option>
+            <option value="bottom-left">&#8601; Bottom Left</option>
+            <option value="bottom-center">&#8595; Bottom Center</option>
+            <option value="bottom-right">&#8600; Bottom Right</option>
+            <option value="custom">&#9998; Custom X / Y</option>
+          </select>
+          <div id="hole-custom-xy" style="display:none; margin-top:8px">
+            <label class="field-label">X from left: <strong id="hole-x-val">14</strong> mm</label>
+            <input type="range" id="input-hole-x" min="5" max="325" step="1" value="14" />
+            <label class="field-label" style="margin-top:6px">Y from top: <strong id="hole-y-val">14</strong> mm</label>
+            <input type="range" id="input-hole-y" min="5" max="160" step="1" value="14" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Colors -->
+      <section class="form-section">
+        <h2>Colors</h2>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+            <span>Plate Background</span>
+            <input type="color" id="input-color-bg" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+          </label>
+          <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+            <span>Text &amp; Characters</span>
+            <input type="color" id="input-color-text" value="#1a5c1a" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+          </label>
+          <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+            <span>Border</span>
+            <input type="color" id="input-color-border" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+          </label>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="form-section actions">
+        <label class="field-label"><span data-i18n="printLength">Print Length</span>: <strong id="print-length-val">70</strong> mm</label>
+        <input type="range" id="input-print-length" min="30" max="330" step="5" value="70" />
+        <div class="btn-row" style="display:flex;gap:6px;margin-top:12px">
+          <button id="btn-stl-plain" class="btn btn-secondary" style="flex:1" disabled data-i18n-btn="btnStl">⬇ STL</button>
+          <button id="btn-stl" class="btn btn-primary" style="flex:1" disabled data-i18n-btn="btn3mf">⬇ 3MF</button>
+        </div>
+        <button id="btn-video" class="btn btn-secondary" disabled>🎬 Record 5s Video</button>
+        <button id="btn-svg" class="btn btn-secondary" data-i18n-btn="btnSvg">⬇ Download SVG</button>
+        <button id="btn-generate" class="btn btn-primary" data-i18n-btn="btnGenerate">⚙ Generate 3D Model</button>
+      </section>
+
+    </aside>
+
+    <!-- ── RIGHT: PREVIEW PANEL ───────────────────────────── -->
+    <section id="preview-panel">
+
+      <!-- SVG live preview -->
+      <div class="preview-block">
+        <h2>Live Preview</h2>
+        <div id="svg-preview-wrap">
+          <div id="svg-preview"></div>
+        </div>
+      </div>
+
+      <!-- 3D viewer -->
+      <div class="preview-block" id="viewer-block">
+        <h2>3D Preview <span class="hint">(drag to rotate · scroll to zoom)</span></h2>
+        <div id="three-container">
+          <canvas id="three-canvas"></canvas>
+          <div id="three-placeholder">
+            <span>Click <em>Generate 3D Model</em> to see the plate here</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ─── APP SCRIPTS ───────────────────────────────────────── -->
+  <script type="module" src="js/app.js"></script>
+
+  <!-- ─── FOOTER ──────────────────────────────────────────── -->
+  <footer style="text-align:center;padding:14px 16px;font-size:0.78rem;color:var(--muted);border-top:1px solid var(--border);margin-top:auto">
+    <span>This is an AI-generated open source project &mdash; MIT Licensed.</span>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/prashantkandel12/japanese-number-plate-generator" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">View source on GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://putali.aishwarya.co.jp/" style="color:var(--accent2);text-decoration:none">putali.aishwarya.co.jp</a>
+  </footer>
+
+</body>
+</html>

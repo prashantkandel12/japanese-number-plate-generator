@@ -1,0 +1,12 @@
+# Dependency Notice
+
+This project loads the following third-party libraries from CDN at runtime:
+
+- **Three.js** r165 — MIT License — https://threejs.org/
+- **opentype.js** 1.3.4 — MIT License — https://opentype.js.org/
+- **JSZip** 3.10.1 — MIT License — https://stuk.github.io/jszip/
+
+Fonts served from CDN / local:
+- **M PLUS 1p** (weight 800) — OFL 1.1 — https://fonts.google.com/specimen/M+PLUS+1p
+- **Big Shoulders Display** (weight 900) — OFL 1.1 — https://fonts.google.com/specimen/Big+Shoulders+Display
+- **Noto Sans JP** — OFL 1.1 — https://fonts.google.com/noto/specimen/Noto+Sans+JP
