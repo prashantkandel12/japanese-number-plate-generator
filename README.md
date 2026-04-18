@@ -1,8 +1,10 @@
-# 日本のナンバープレート Generator
+# Japanese Number Plate Generator
 
 **A free, open-source web app to design and 3D-print Japanese number plates.**
 
-Live at → [putali.aishwarya.co.jp](https://putali.aishwarya.co.jp/)
+Live at → [3d-japanese-plate.prashantkandel.com](https://3d-japanese-plate.prashantkandel.com/)
+
+![Screenshot](assets/screenshot.png)
 
 ---
 
@@ -100,7 +102,6 @@ All dependencies are loaded from CDN (jsDelivr). Local WOFF fallbacks are stored
 │   ├── model-generator.js  # Three.js 3D build, STL/3MF export, video capture
 │   └── app.js              # UI wiring, URL state, i18n, theme toggle
 └── assets/
-    ├── putali-logo.png
     └── fonts/
         ├── m-plus-1p-800.woff
         └── big-shoulders-900.woff
@@ -122,4 +123,4 @@ MIT — see [LICENSE](LICENSE)
 
 ---
 
-> This is an AI-generated open source project by [Putali](https://putali.aishwarya.co.jp/).
+> This is an AI-generated open source project by [Prashant Kandel](https://prashantkandel.com/).

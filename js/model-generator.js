@@ -783,13 +783,13 @@ export async function download3MF(filename = 'jp-plate.3mf', printLengthMm = 120
 // ─── VIDEO EXPORT ─────────────────────────────────────────────────
 
 /**
- * Record a 5-second (default) rotating video of the 3D viewer.
+ * Record a 10-second (default) rotating video of the 3D viewer.
  * The camera orbits 360° around the model and the result is downloaded as WebM.
  * @param {HTMLCanvasElement} canvas  - The Three.js renderer canvas
- * @param {number} durationMs         - Duration in ms (default 5000)
+ * @param {number} durationMs         - Duration in ms (default 10000)
  * @param {function} onProgress       - Optional callback(0..1)
  */
-export function captureRotationVideo(canvas, durationMs = 5000, onProgress) {
+export function captureRotationVideo(canvas, durationMs = 10000, onProgress) {
   return new Promise((resolve, reject) => {
     if (!_scene || !_camera || !_renderer) {
       return reject(new Error('3D viewer not initialised.'));
@@ -842,8 +842,22 @@ export function captureRotationVideo(canvas, durationMs = 5000, onProgress) {
       const elapsed = performance.now() - startTime;
       const t       = Math.min(elapsed / durationMs, 1);
 
-      // Full 360° rotation
-      const angle = startAzimuth + t * Math.PI * 2;
+      // Rotation pattern: 90° left (0→0.25), 180° right (0.25→0.75), 90° left (0.75→1.0)
+      // This sweeps left, reverses right past center, then returns to start.
+      let angleOffset;
+      if (t < 0.25) {
+        // Phase 1: rotate 90° left (negative direction)
+        angleOffset = -(t / 0.25) * (Math.PI / 2);
+      } else if (t < 0.75) {
+        // Phase 2: rotate 180° right (from -90° to +90°)
+        const p = (t - 0.25) / 0.5;
+        angleOffset = -Math.PI / 2 + p * Math.PI;
+      } else {
+        // Phase 3: rotate 90° left (from +90° back to 0°)
+        const p = (t - 0.75) / 0.25;
+        angleOffset = Math.PI / 2 - p * (Math.PI / 2);
+      }
+      const angle = startAzimuth + angleOffset;
       _camera.position.set(
         Math.sin(angle) * radius,
         camY,

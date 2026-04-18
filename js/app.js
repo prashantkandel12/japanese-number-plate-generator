@@ -102,7 +102,7 @@ function parseHexColor(value) {
 const I18N = {
   en: {
     appTitle: 'Japanese Number Plate Generator',
-    appSub: '3D Print & Download \u2014 by Putali',
+    appSub: '3D Print & Download',
     plateType: 'Plate Type',
     prefecture: 'Region / Prefecture',
     prefLabel: 'Prefecture Kanji',
@@ -128,7 +128,7 @@ const I18N = {
   },
   ja: {
     appTitle: '\u65e5\u672c\u306e\u30ca\u30f3\u30d0\u30fc\u30d7\u30ec\u30fc\u30c8 \u30b8\u30a7\u30cd\u30ec\u30fc\u30bf\u30fc',
-    appSub: '3D\u30d7\u30ea\u30f3\u30c8\u7528 \u2014 Putali\u88fd',
+    appSub: '3D\u30d7\u30ea\u30f3\u30c8\u7528',
     plateType: '\u30d7\u30ec\u30fc\u30c8\u7a2e\u5225',
     prefecture: '\u767b\u9332\u5730\u57df',
     prefLabel: '\u5730\u57df\u540d\uff08\u6f22\u5b57\uff09',
@@ -170,7 +170,7 @@ function applyLang(lang) {
   document.documentElement.lang = lang === 'ja' ? 'ja' : 'en';
   elBtnLang.textContent = lang === 'ja' ? 'EN' : 'JP';
   updatePrintabilityNote();
-  try { localStorage.setItem('putali-lang', lang); } catch (_) {}
+  try { localStorage.setItem('jpplate-lang', lang); } catch (_) {}
 }
 
 function updatePrintabilityNote() {
@@ -491,22 +491,22 @@ elBtnStlPlain.addEventListener('click', async () => {
   }
 });
 
-// Record 5-second rotating video
+// Record 10-second rotating video
 elBtnVideo.addEventListener('click', async () => {
   try {
     elBtnVideo.disabled = true;
     elBtnVideo.textContent = '⏺ Recording…';
     const canvas = elThreeCanvas || document.querySelector('#three-container canvas');
     if (!canvas) throw new Error('3D canvas not found.');
-    await captureRotationVideo(canvas, 5000, t => {
+    await captureRotationVideo(canvas, 10000, t => {
       const pct = Math.round(t * 100);
       elBtnVideo.textContent = `⏺ Recording… ${pct}%`;
     });
     elBtnVideo.textContent = '✓ Video saved!';
-    setTimeout(() => { elBtnVideo.textContent = '🎬 Record 5s Video'; }, 2000);
+    setTimeout(() => { elBtnVideo.textContent = '🎬 Record 10s Video'; }, 2000);
   } catch (err) {
     alert(`Video export failed: ${err.message}`);
-    elBtnVideo.textContent = '🎬 Record 5s Video';
+    elBtnVideo.textContent = '🎬 Record 10s Video';
   } finally {
     elBtnVideo.disabled = false;
   }
@@ -536,7 +536,7 @@ function applyTheme(dark) {
   const moonIcon = document.getElementById('theme-icon-moon');
   if (sunIcon)  sunIcon.style.display  = dark ? 'none'  : '';
   if (moonIcon) moonIcon.style.display = dark ? ''      : 'none';
-  try { localStorage.setItem('putali-theme', dark ? 'dark' : 'light'); } catch (_) {}
+  try { localStorage.setItem('jpplate-theme', dark ? 'dark' : 'light'); } catch (_) {}
   updateURL();
 }
 
@@ -616,7 +616,7 @@ function init() {
   let savedLang = _currentLang;
   try {
     if (!new URLSearchParams(location.search).has('lang')) {
-      savedLang = localStorage.getItem('putali-lang') || _currentLang;
+      savedLang = localStorage.getItem('jpplate-lang') || _currentLang;
     }
   } catch (_) {}
   applyLang(savedLang);
@@ -625,7 +625,7 @@ function init() {
   let savedTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   try {
     if (!new URLSearchParams(location.search).has('theme')) {
-      savedTheme = localStorage.getItem('putali-theme') || savedTheme;
+      savedTheme = localStorage.getItem('jpplate-theme') || savedTheme;
     }
   } catch (_) {}
   applyTheme(savedTheme === 'dark');
