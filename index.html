@@ -176,15 +176,24 @@
         <div style="display:flex;flex-direction:column;gap:10px">
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
             <span data-i18n="colorBg">Plate Background</span>
-            <input type="color" id="input-color-bg" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            <span style="display:flex;align-items:center;gap:4px">
+              <input type="text" id="input-color-bg-hex" value="#FFFFFF" maxlength="7" style="width:70px;font-size:0.8rem;padding:4px 6px;border:1px solid #aaa;border-radius:4px;background:#fff;color:#333;font-family:monospace;text-align:center" />
+              <input type="color" id="input-color-bg" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            </span>
           </label>
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
             <span data-i18n="colorText">Text &amp; Characters</span>
-            <input type="color" id="input-color-text" value="#1a5c1a" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            <span style="display:flex;align-items:center;gap:4px">
+              <input type="text" id="input-color-text-hex" value="#1A5C1A" maxlength="7" style="width:70px;font-size:0.8rem;padding:4px 6px;border:1px solid #aaa;border-radius:4px;background:#fff;color:#333;font-family:monospace;text-align:center" />
+              <input type="color" id="input-color-text" value="#1a5c1a" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            </span>
           </label>
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
             <span data-i18n="colorBorder">Border</span>
-            <input type="color" id="input-color-border" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            <span style="display:flex;align-items:center;gap:4px">
+              <input type="text" id="input-color-border-hex" value="#FFFFFF" maxlength="7" style="width:70px;font-size:0.8rem;padding:4px 6px;border:1px solid #aaa;border-radius:4px;background:#fff;color:#333;font-family:monospace;text-align:center" />
+              <input type="color" id="input-color-border" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+            </span>
           </label>
           <label class="field-label" style="display:flex;align-items:center;gap:6px">
             <input type="checkbox" id="chk-border-text" />

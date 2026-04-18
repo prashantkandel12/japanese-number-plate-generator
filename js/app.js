@@ -42,6 +42,9 @@ const elColorBg         = document.getElementById('input-color-bg');
 const elColorText       = document.getElementById('input-color-text');
 const elColorBorder     = document.getElementById('input-color-border');
 const elChkBorderText   = document.getElementById('chk-border-text');
+const elHexBg           = document.getElementById('input-color-bg-hex');
+const elHexText         = document.getElementById('input-color-text-hex');
+const elHexBorder       = document.getElementById('input-color-border-hex');
 const elSvgPreview      = document.getElementById('svg-preview');
 const elBtnSvg          = document.getElementById('btn-svg');
 const elBtnGenerate     = document.getElementById('btn-generate');
@@ -337,6 +340,9 @@ function syncColorPickers() {
   elColorBg.value     = config.customBg     || theme.bg;
   elColorText.value   = config.customText   || theme.text;
   elColorBorder.value = config.customBorder || theme.border;
+  elHexBg.value       = elColorBg.value;
+  elHexText.value     = elColorText.value;
+  elHexBorder.value   = elColorBorder.value;
   config.customBg     = elColorBg.value;
   config.customText   = elColorText.value;
   config.customBorder = elColorBorder.value;
@@ -344,32 +350,64 @@ function syncColorPickers() {
 
 elColorBg.addEventListener('input', () => {
   config.customBg = elColorBg.value;
+  elHexBg.value = elColorBg.value;
   updatePreview();
   updateURL();
 });
 elColorText.addEventListener('input', () => {
   config.customText = elColorText.value;
+  elHexText.value = elColorText.value;
   if (elChkBorderText.checked) {
     config.customBorder = elColorText.value;
     elColorBorder.value = elColorText.value;
+    elHexBorder.value = elColorText.value;
   }
   updatePreview();
   updateURL();
 });
 elColorBorder.addEventListener('input', () => {
   config.customBorder = elColorBorder.value;
+  elHexBorder.value = elColorBorder.value;
   if (elChkBorderText.checked) elChkBorderText.checked = false;
   updatePreview();
   updateURL();
 });
 
+// Hex text inputs
+function applyHex(hexEl, colorEl, configKey) {
+  let v = hexEl.value.trim();
+  if (/^[0-9a-fA-F]{6}$/.test(v)) v = '#' + v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    v = v.toUpperCase();
+    colorEl.value = v;
+    hexEl.value = v;
+    config[configKey] = v;
+    if (configKey === 'customText' && elChkBorderText.checked) {
+      config.customBorder = v;
+      elColorBorder.value = v;
+      elHexBorder.value = v;
+    }
+    if (configKey === 'customBorder' && elChkBorderText.checked) elChkBorderText.checked = false;
+    updatePreview();
+    updateURL();
+  } else {
+    hexEl.value = colorEl.value;
+  }
+}
+elHexBg.addEventListener('change', () => applyHex(elHexBg, elColorBg, 'customBg'));
+elHexText.addEventListener('change', () => applyHex(elHexText, elColorText, 'customText'));
+elHexBorder.addEventListener('change', () => applyHex(elHexBorder, elColorBorder, 'customBorder'));
+
 elChkBorderText.addEventListener('change', () => {
   if (elChkBorderText.checked) {
     config.customBorder = elColorText.value;
     elColorBorder.value = elColorText.value;
+    elHexBorder.value = elColorText.value;
     elColorBorder.disabled = true;
+    elHexBorder.disabled = true;
   } else {
     elColorBorder.disabled = false;
+    elHexBorder.disabled = false;
   }
   updatePreview();
   updateURL();
@@ -381,6 +419,7 @@ document.getElementById('btn-reset-colors').addEventListener('click', () => {
   config.customBorder = '';
   elChkBorderText.checked = false;
   elColorBorder.disabled = false;
+  elHexBorder.disabled = false;
   syncColorPickers();
   updatePreview();
   updateURL();
