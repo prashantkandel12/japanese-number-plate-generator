@@ -41,6 +41,7 @@ const elFontStatus      = { textContent: '' }; // status sink (no UI element)
 const elColorBg         = document.getElementById('input-color-bg');
 const elColorText       = document.getElementById('input-color-text');
 const elColorBorder     = document.getElementById('input-color-border');
+const elChkBorderText   = document.getElementById('chk-border-text');
 const elSvgPreview      = document.getElementById('svg-preview');
 const elBtnSvg          = document.getElementById('btn-svg');
 const elBtnGenerate     = document.getElementById('btn-generate');
@@ -125,6 +126,21 @@ const I18N = {
     btnGenerate: '\u2699 Generate 3D Model',
     btnStl: '\u2b07 STL',
     btn3mf: '\u2b07 3MF',
+    colors: 'Colors',
+    colorBg: 'Plate Background',
+    colorText: 'Text & Characters',
+    colorBorder: 'Border',
+    borderSameAsText: 'Border same as text color',
+    resetColors: '↺ Reset',
+    posTopLeft: '↖ Top Left',
+    posTopCenter: '↑ Top Center',
+    posTopRight: '↗ Top Right',
+    posBotLeft: '↙ Bottom Left',
+    posBotCenter: '↓ Bottom Center',
+    posBotRight: '↘ Bottom Right',
+    posCustom: '✎ Custom X / Y',
+    holeXFrom: 'X from left',
+    holeYFrom: 'Y from top',
   },
   ja: {
     appTitle: '\u65e5\u672c\u306e\u30ca\u30f3\u30d0\u30fc\u30d7\u30ec\u30fc\u30c8 \u30b8\u30a7\u30cd\u30ec\u30fc\u30bf\u30fc',
@@ -151,6 +167,21 @@ const I18N = {
     btnGenerate: '\u2699 3D\u30e2\u30c7\u30eb\u3092\u751f\u6210',
     btnStl: '\u2b07 STL',
     btn3mf: '\u2b07 3MF',
+    colors: '\u8272',
+    colorBg: '\u30d7\u30ec\u30fc\u30c8\u80cc\u666f',
+    colorText: '\u6587\u5b57\u30fb\u8a18\u53f7',
+    colorBorder: '\u67a0\u7dda',
+    borderSameAsText: '\u67a0\u7dda\u3092\u6587\u5b57\u8272\u3068\u540c\u3058\u306b\u3059\u308b',
+    resetColors: '\u21ba \u30ea\u30bb\u30c3\u30c8',
+    posTopLeft: '\u2196 \u5de6\u4e0a',
+    posTopCenter: '\u2191 \u4e0a\u4e2d\u592e',
+    posTopRight: '\u2197 \u53f3\u4e0a',
+    posBotLeft: '\u2199 \u5de6\u4e0b',
+    posBotCenter: '\u2193 \u4e0b\u4e2d\u592e',
+    posBotRight: '\u2198 \u53f3\u4e0b',
+    posCustom: '\u270e \u30ab\u30b9\u30bf\u30e0 X / Y',
+    holeXFrom: '\u5de6\u304b\u3089X',
+    holeYFrom: '\u4e0a\u304b\u3089Y',
   },
 };
 
@@ -174,8 +205,8 @@ function applyLang(lang) {
 }
 
 function updatePrintabilityNote() {
-  const length = parseFiniteNumber(elPrintLength.value) ?? 120;
-  if (length >= 100) {
+  const length = parseFiniteNumber(elPrintLength.value) ?? 70;
+  if (length >= 60) {
     elPrintabilityNote.textContent = '';
     elPrintabilityNote.classList.add('hidden');
     elPrintabilityNote.classList.remove('warning');
@@ -183,8 +214,8 @@ function updatePrintabilityNote() {
   }
 
   const msg = _currentLang === 'ja'
-    ? '100mm未満では、漢字とひらがなの細い線が0.4mmノズルでつぶれたり欠けたりしやすくなります。100mm以上、または0.2mmノズルを推奨します。'
-    : 'Below 100mm overall width, kanji and hiragana strokes are often too fine for a 0.4mm nozzle. Use 100mm+ or a 0.2mm nozzle for cleaner slicing.';
+    ? '60mm未満では、漢字とひらがなの細い線が0.4mmノズルでつぶれたり欠けたりしやすくなります。60mm以上、または0.2mmノズルを推奨します。'
+    : 'Below 60mm overall width, kanji and hiragana strokes are often too fine for a 0.4mm nozzle. Use 60mm+ or a 0.2mm nozzle for cleaner slicing.';
   elPrintabilityNote.textContent = msg;
   elPrintabilityNote.classList.remove('hidden');
   elPrintabilityNote.classList.add('warning');
@@ -290,7 +321,10 @@ elTypeGroup.addEventListener('click', (e) => {
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   config.plateType = btn.dataset.type;
-  // Sync color pickers to the new plate type's defaults
+  // Reset custom colours so the new type's defaults apply
+  config.customBg = '';
+  config.customText = '';
+  config.customBorder = '';
   syncColorPickers();
   populateHiragana();
   updatePreview();
@@ -315,11 +349,39 @@ elColorBg.addEventListener('input', () => {
 });
 elColorText.addEventListener('input', () => {
   config.customText = elColorText.value;
+  if (elChkBorderText.checked) {
+    config.customBorder = elColorText.value;
+    elColorBorder.value = elColorText.value;
+  }
   updatePreview();
   updateURL();
 });
 elColorBorder.addEventListener('input', () => {
   config.customBorder = elColorBorder.value;
+  if (elChkBorderText.checked) elChkBorderText.checked = false;
+  updatePreview();
+  updateURL();
+});
+
+elChkBorderText.addEventListener('change', () => {
+  if (elChkBorderText.checked) {
+    config.customBorder = elColorText.value;
+    elColorBorder.value = elColorText.value;
+    elColorBorder.disabled = true;
+  } else {
+    elColorBorder.disabled = false;
+  }
+  updatePreview();
+  updateURL();
+});
+
+document.getElementById('btn-reset-colors').addEventListener('click', () => {
+  config.customBg = '';
+  config.customText = '';
+  config.customBorder = '';
+  elChkBorderText.checked = false;
+  elColorBorder.disabled = false;
+  syncColorPickers();
   updatePreview();
   updateURL();
 });

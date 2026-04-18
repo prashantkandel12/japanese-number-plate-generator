@@ -145,7 +145,7 @@ export function buildPreviewSVG(config) {
   const topBaseline = TOP_ROW_MID_Y + FS_CLASSIFICATION * 0.35;
   const topLetterSpacing = (FS_CLASSIFICATION * 0.2).toFixed(2);
   const topText = `<text x="${PLATE_W / 2}" y="${topBaseline}" dominant-baseline="auto" text-anchor="middle" letter-spacing="${topLetterSpacing}">
-  <tspan ${TEXT_STYLE} font-size="${FS_CLASSIFICATION}" fill="${fg}">${escapeXml(prefecture || '')}</tspan>
+  <tspan ${TEXT_STYLE} font-size="${FS_CLASSIFICATION}" fill="${fg}" letter-spacing="0">${escapeXml(prefecture || '')}</tspan>
   <tspan ${TEXT_STYLE_NUM} font-size="${FS_CLASSIFICATION}" fill="${fg}">${escapeXml(classification || '')}</tspan>
 </text>`;
 

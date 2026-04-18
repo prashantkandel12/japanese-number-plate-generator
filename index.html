@@ -134,34 +134,34 @@
       <section class="form-section">
         <h2 data-i18n="options3d">3D Options</h2>
 
-        <label class="field-label"><span data-i18n="thickness">Plate Thickness</span>: <strong id="thickness-val">3.0</strong> mm</label>
-        <input type="range" id="input-thickness" min="1" max="20" step="0.5" value="3" />
+        <label class="field-label"><span data-i18n="thickness">Plate Thickness</span>: <strong id="thickness-val">2.0</strong> mm</label>
+        <input type="range" id="input-thickness" min="1" max="20" step="0.5" value="2" />
 
-        <label class="field-label" style="margin-top:12px"><span data-i18n="emboss">Text Emboss Depth</span>: <strong id="emboss-val">5.0</strong> mm</label>
-        <input type="range" id="input-emboss" min="0.3" max="20" step="0.1" value="5" />
+        <label class="field-label" style="margin-top:12px"><span data-i18n="emboss">Text Emboss Depth</span>: <strong id="emboss-val">2.0</strong> mm</label>
+        <input type="range" id="input-emboss" min="0.3" max="20" step="0.1" value="2" />
 
         <label class="check-label">
           <input type="checkbox" id="input-keychain" />
-          <span>Keychain Hole</span>
+          <span data-i18n="keychainHole">Keychain Hole</span>
         </label>
         <div id="hole-radius-section" style="display:none; margin-top:10px">
-          <label class="field-label">Hole Radius: <strong id="hole-radius-val">5.5</strong> mm</label>
+          <label class="field-label"><span data-i18n="holeRadius">Hole Radius</span>: <strong id="hole-radius-val">5.5</strong> mm</label>
           <input type="range" id="input-hole-radius" min="2" max="15" step="0.5" value="5.5" />
 
-          <label class="field-label" style="margin-top:10px">Position:</label>
+          <label class="field-label" style="margin-top:10px"><span data-i18n="holePos">Position</span>:</label>
           <select id="input-hole-pos">
-            <option value="top-left" selected>&#8598; Top Left</option>
-            <option value="top-center">&#8593; Top Center</option>
-            <option value="top-right">&#8599; Top Right</option>
-            <option value="bottom-left">&#8601; Bottom Left</option>
-            <option value="bottom-center">&#8595; Bottom Center</option>
-            <option value="bottom-right">&#8600; Bottom Right</option>
-            <option value="custom">&#9998; Custom X / Y</option>
+            <option value="top-left" selected data-i18n="posTopLeft">&#8598; Top Left</option>
+            <option value="top-center" data-i18n="posTopCenter">&#8593; Top Center</option>
+            <option value="top-right" data-i18n="posTopRight">&#8599; Top Right</option>
+            <option value="bottom-left" data-i18n="posBotLeft">&#8601; Bottom Left</option>
+            <option value="bottom-center" data-i18n="posBotCenter">&#8595; Bottom Center</option>
+            <option value="bottom-right" data-i18n="posBotRight">&#8600; Bottom Right</option>
+            <option value="custom" data-i18n="posCustom">&#9998; Custom X / Y</option>
           </select>
           <div id="hole-custom-xy" style="display:none; margin-top:8px">
-            <label class="field-label">X from left: <strong id="hole-x-val">14</strong> mm</label>
+            <label class="field-label"><span data-i18n="holeXFrom">X from left</span>: <strong id="hole-x-val">14</strong> mm</label>
             <input type="range" id="input-hole-x" min="5" max="325" step="1" value="14" />
-            <label class="field-label" style="margin-top:6px">Y from top: <strong id="hole-y-val">14</strong> mm</label>
+            <label class="field-label" style="margin-top:6px"><span data-i18n="holeYFrom">Y from top</span>: <strong id="hole-y-val">14</strong> mm</label>
             <input type="range" id="input-hole-y" min="5" max="160" step="1" value="14" />
           </div>
         </div>
@@ -169,27 +169,34 @@
 
       <!-- Colors -->
       <section class="form-section">
-        <h2>Colors</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2 style="margin:0" data-i18n="colors">Colors</h2>
+          <button id="btn-reset-colors" type="button" style="padding:2px 8px;font-size:0.75rem;border-radius:6px;border:1px solid var(--clr-border);background:var(--clr-surface);color:var(--clr-text);cursor:pointer"><span data-i18n="resetColors">↺ Reset</span></button>
+        </div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-            <span>Plate Background</span>
+            <span data-i18n="colorBg">Plate Background</span>
             <input type="color" id="input-color-bg" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
           </label>
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-            <span>Text &amp; Characters</span>
+            <span data-i18n="colorText">Text &amp; Characters</span>
             <input type="color" id="input-color-text" value="#1a5c1a" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
           </label>
           <label class="field-label" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
-            <span>Border</span>
+            <span data-i18n="colorBorder">Border</span>
             <input type="color" id="input-color-border" value="#FFFFFF" style="width:44px;height:30px;padding:2px;border-radius:6px;cursor:pointer" />
+          </label>
+          <label class="field-label" style="display:flex;align-items:center;gap:6px">
+            <input type="checkbox" id="chk-border-text" />
+            <span data-i18n="borderSameAsText">Border same as text color</span>
           </label>
         </div>
       </section>
 
       <!-- Actions -->
       <section class="form-section actions">
-        <label class="field-label"><span data-i18n="printLength">Print Length</span>: <strong id="print-length-val">120</strong> mm</label>
-        <input type="range" id="input-print-length" min="30" max="330" step="5" value="120" />
+        <label class="field-label"><span data-i18n="printLength">Print Length</span>: <strong id="print-length-val">70</strong> mm</label>
+        <input type="range" id="input-print-length" min="30" max="330" step="5" value="70" />
         <p id="printability-note" class="field-note hidden"></p>
         <div class="btn-row" style="display:flex;gap:6px;margin-top:12px">
           <button id="btn-stl-plain" class="btn btn-secondary" style="flex:1" disabled data-i18n-btn="btnStl">⬇ STL</button>

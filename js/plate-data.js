@@ -23,19 +23,19 @@ export const PLATE_TYPES = {
     label: '営 Commercial',
     bg:     '#1a5c1a',
     text:   '#FFFFFF',
-    border: '#FFFFFF',
+    border: '#1a5c1a',
   },
   kprivate: {
     label: '軽 Kei Private',
     bg:     '#FFFF00',
     text:   '#1a1a1a',
-    border: '#1a1a1a',
+    border: '#FFFF00',
   },
   kcommercial: {
     label: '軽 Kei Commercial',
     bg:     '#1a1a1a',
     text:   '#FFFF00',
-    border: '#FFFF00',
+    border: '#1a1a1a',
   },
 };
 
@@ -85,6 +85,6 @@ export const DEFAULT_CONFIG = {
   holePosition:    'top-left', // 'top-left'|'top-center'|'top-right'|'bottom-left'|'bottom-center'|'bottom-right'|'custom'
   holeCustomX:     14,    // mm from left edge — used when holePosition === 'custom'
   holeCustomY:     14,    // mm from top edge  — used when holePosition === 'custom'
-  plateThickness:  3.0,   // mm  (1–20 mm)
-  textDepth:       5.0,   // mm — how far text protrudes above plate face (0.3–20 mm)
+  plateThickness:  2.0,   // mm  (1–20 mm)
+  textDepth:       2.0,   // mm — how far text protrudes above plate face (0.3–20 mm)
 };
